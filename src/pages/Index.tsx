@@ -29,10 +29,24 @@ interface Client {
   total: number;
 }
 
+interface Equipment {
+  id: number;
+  model: string;
+  serialNumber: string;
+  addedDate: string;
+}
+
 const Index = () => {
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'warehouse' | 'clients' | 'settings' | 'orders'>('dashboard');
   const [userRole, setUserRole] = useState<UserRole>('admin');
   const [searchTerm, setSearchTerm] = useState('');
+  const [equipment, setEquipment] = useState<Equipment[]>([
+    { id: 1, model: 'HP ProDesk 600 G6', serialNumber: 'SN2024-0001', addedDate: '2024-01-15' },
+    { id: 2, model: 'Dell OptiPlex 7090', serialNumber: 'SN2024-0002', addedDate: '2024-02-20' },
+    { id: 3, model: 'Lenovo ThinkCentre M720', serialNumber: 'SN2024-0003', addedDate: '2024-03-10' },
+  ]);
+  const [newEquipment, setNewEquipment] = useState({ model: '', serialNumber: '' });
+  const [showEquipmentForm, setShowEquipmentForm] = useState(false);
 
   const products: Product[] = [
     { id: 1, name: 'Ноутбук Dell XPS 15', category: 'Электроника', quantity: 45, reserved: 5, price: 125000, status: 'in-stock' },
@@ -204,6 +218,24 @@ const Index = () => {
     </div>
   );
 
+  const handleAddEquipment = () => {
+    if (newEquipment.model && newEquipment.serialNumber) {
+      const newItem: Equipment = {
+        id: equipment.length + 1,
+        model: newEquipment.model,
+        serialNumber: newEquipment.serialNumber,
+        addedDate: new Date().toISOString().split('T')[0]
+      };
+      setEquipment([...equipment, newItem]);
+      setNewEquipment({ model: '', serialNumber: '' });
+      setShowEquipmentForm(false);
+    }
+  };
+
+  const handleDeleteEquipment = (id: number) => {
+    setEquipment(equipment.filter(e => e.id !== id));
+  };
+
   const renderClients = () => (
     <div className="space-y-6 animate-fade-in">
       <div className="relative max-w-md">
@@ -256,6 +288,81 @@ const Index = () => {
           </Card>
         ))}
       </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Icon name="Monitor" className="h-5 w-5 text-primary" />
+              Оборудование
+            </CardTitle>
+            {userRole === 'admin' && (
+              <Button onClick={() => setShowEquipmentForm(!showEquipmentForm)} size="sm" className="gap-2">
+                <Icon name="Plus" size={16} />
+                Добавить
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {showEquipmentForm && userRole === 'admin' && (
+            <div className="mb-4 p-4 bg-muted/50 rounded-lg space-y-3">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Модель</label>
+                <Input
+                  placeholder="Введите модель оборудования"
+                  value={newEquipment.model}
+                  onChange={(e) => setNewEquipment({ ...newEquipment, model: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Серийный номер</label>
+                <Input
+                  placeholder="Введите серийный номер"
+                  value={newEquipment.serialNumber}
+                  onChange={(e) => setNewEquipment({ ...newEquipment, serialNumber: e.target.value })}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleAddEquipment} size="sm">Сохранить</Button>
+                <Button onClick={() => setShowEquipmentForm(false)} variant="outline" size="sm">Отмена</Button>
+              </div>
+            </div>
+          )}
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Модель</TableHead>
+                <TableHead>Серийный номер</TableHead>
+                <TableHead>Дата добавления</TableHead>
+                {userRole === 'admin' && <TableHead className="text-center">Действия</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {equipment.map((item) => (
+                <TableRow key={item.id} className="hover:bg-muted/50 transition-colors">
+                  <TableCell className="font-medium">{item.model}</TableCell>
+                  <TableCell className="text-muted-foreground">{item.serialNumber}</TableCell>
+                  <TableCell className="text-muted-foreground">{new Date(item.addedDate).toLocaleDateString('ru-RU')}</TableCell>
+                  {userRole === 'admin' && (
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteEquipment(item.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Icon name="Trash2" size={16} />
+                      </Button>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 
